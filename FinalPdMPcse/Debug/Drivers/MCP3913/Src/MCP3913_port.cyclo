@@ -1,0 +1,6 @@
+MCP3913_port.c:7:6:MCP3913_Port_CS_Low	1
+MCP3913_port.c:12:6:MCP3913_Port_CS_High	1
+MCP3913_port.c:18:6:MCP3913_Port_Write_Reg	2
+MCP3913_port.c:37:6:MCP3913_Port_Read_N_Bytes_Reg	2
+MCP3913_port.c:55:6:MCP3913_Port_Read_3_Bytes_Reg	1
+MCP3913_port.c:60:6:MCP3913_Port_Read_4_Bytes_Reg	1
