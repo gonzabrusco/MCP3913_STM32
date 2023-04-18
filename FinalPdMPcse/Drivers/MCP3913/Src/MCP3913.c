@@ -133,7 +133,7 @@ void MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel, i
 void MCP3913_Read_All_Channels(const MCP3913_handle_t* adc_handle, int32_t * values) {
   if(!adc_handle || !values) return;
 
-  uint8_t read_array[24]; // 6 canales x 4 bytes cada uno = 24.
+  uint8_t read_array[MCP3913_ADC_CHANNELS_QTY * 4]; // 6 canales x 4 bytes cada uno = 24.
   MCP3913_StatusCom_Reg_t statuscom_reg;
 
   do {
@@ -143,8 +143,8 @@ void MCP3913_Read_All_Channels(const MCP3913_handle_t* adc_handle, int32_t * val
 
   MCP3913_Port_Read_24_Bytes_Reg(adc_handle, 0, read_array);
 
-  for(uint8_t i = 0; i < 6; i++) { // Recorro los 6 canales del ADC y junto cuatro uint8_t para formar un int32_t por canal.
-    values[5-i] = (int32_t)((uint32_t)read_array[i*4+3] << 24 | (uint32_t)read_array[i*4+2] << 16 | (uint32_t)read_array[i*4+1] << 8 | (uint32_t)read_array[i*4]);
+  for(uint8_t i = 0; i < MCP3913_ADC_CHANNELS_QTY; i++) { // Recorro los 6 canales del ADC y junto cuatro uint8_t para formar un int32_t por canal.
+    values[MCP3913_ADC_CHANNELS_QTY-1-i] = (int32_t)((uint32_t)read_array[i*4+3] << 24 | (uint32_t)read_array[i*4+2] << 16 | (uint32_t)read_array[i*4+1] << 8 | (uint32_t)read_array[i*4]);
   }
 }
 

@@ -28,10 +28,17 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+typedef enum{
+  INIT_ADCS,
+  ADQUIRE_SAMPLES_FROM_ONE_ADC,
+  SWITCH_TO_NEXT_ADC,
+} adc_fsm_state_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define MCP3913_ADC_QTY 3
 
 /* USER CODE END PD */
 
@@ -44,6 +51,10 @@
 SPI_HandleTypeDef hspi2;
 
 /* USER CODE BEGIN PV */
+static MCP3913_handle_t adc[MCP3913_ADC_QTY]; // Array de estructuras de configuracion de ADC MCP3913
+static int32_t adc_values[MCP3913_ADC_QTY][MCP3913_ADC_CHANNELS_QTY]; // Matriz donde se guardaron los valores leidos.
+static adc_fsm_state_t adc_fsm_state; // Variable que indica el estado de la MEF de adquisicion de ADCs
+static uint8_t adc_being_adquired; // Variable que indica que ADC esta siendo adquirido
 
 /* USER CODE END PV */
 
@@ -52,6 +63,14 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
+/*
+ * @brief Inicializa la maquina de estados del manejo de los adc
+ */
+void ADC_FSM_Init();
+/*
+ * @brief Actualiza la maquina de estados del manejo de los adc
+ */
+void ADC_FSM_Update();
 
 /* USER CODE END PFP */
 
@@ -90,40 +109,8 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-  MCP3913_handle_t adc1;
-  MCP3913_handle_t adc2;
-  MCP3913_handle_t adc3;
-  int32_t adc1_value[6];
-  int32_t adc2_value[6];
-  int32_t adc3_value[6];
-  int32_t adc1_value_b[6];
-  int32_t adc2_value_b[6];
-  int32_t adc3_value_b[6];
+  ADC_FSM_Init();
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4, GPIO_PIN_SET);
-  HAL_Delay(10);
-
-  MCP3913_Load_Default_Config(&adc1);
-  adc1.spi_handle = (void *)&hspi2;
-  adc1.spi_cs_port = (void *)GPIOA;
-  adc1.spi_cs_pin = GPIO_PIN_2;
-  adc1.dev_address = MCP3913_DEFAULT_DEV_ADDRESS;
-
-  MCP3913_Load_Default_Config(&adc2);
-  adc2.spi_handle = (void *)&hspi2;
-  adc2.spi_cs_port = (void *)GPIOA;
-  adc2.spi_cs_pin = GPIO_PIN_3;
-  adc2.dev_address = MCP3913_DEFAULT_DEV_ADDRESS;
-
-  MCP3913_Load_Default_Config(&adc3);
-  adc3.spi_handle = (void *)&hspi2;
-  adc3.spi_cs_port = (void *)GPIOA;
-  adc3.spi_cs_pin = GPIO_PIN_4;
-  adc3.dev_address = MCP3913_DEFAULT_DEV_ADDRESS;
-
-  MCP3913_Init(&adc1);
-  MCP3913_Init(&adc2);
-  MCP3913_Init(&adc3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -133,46 +120,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-/*
-    MCP3913_Read_Channel(&adc1, 0, &adc1_value[0]);
-    MCP3913_Read_Channel(&adc1, 1, &adc1_value[1]);
-    MCP3913_Read_Channel(&adc1, 2, &adc1_value[2]);
-    MCP3913_Read_Channel(&adc1, 3, &adc1_value[3]);
-    MCP3913_Read_Channel(&adc1, 4, &adc1_value[4]);
-    MCP3913_Read_Channel(&adc1, 5, &adc1_value[5]);
-
-    HAL_Delay(1);
-
-    MCP3913_Read_Channel(&adc2, 0, &adc2_value[0]);
-    MCP3913_Read_Channel(&adc2, 1, &adc2_value[1]);
-    MCP3913_Read_Channel(&adc2, 2, &adc2_value[2]);
-    MCP3913_Read_Channel(&adc2, 3, &adc2_value[3]);
-    MCP3913_Read_Channel(&adc2, 4, &adc2_value[4]);
-    MCP3913_Read_Channel(&adc2, 5, &adc2_value[5]);
-
-    HAL_Delay(1);
-
-    MCP3913_Read_Channel(&adc3, 0, &adc3_value[0]);
-    MCP3913_Read_Channel(&adc3, 1, &adc3_value[1]);
-    MCP3913_Read_Channel(&adc3, 2, &adc3_value[2]);
-    MCP3913_Read_Channel(&adc3, 3, &adc3_value[3]);
-    MCP3913_Read_Channel(&adc3, 4, &adc3_value[4]);
-    MCP3913_Read_Channel(&adc3, 5, &adc3_value[5]);
-*/
-    HAL_Delay(1);
-
-    MCP3913_Read_All_Channels(&adc1, adc1_value_b);
-
-    HAL_Delay(1);
-
-    MCP3913_Read_All_Channels(&adc2, adc2_value_b);
-
-    HAL_Delay(1);
-
-    MCP3913_Read_All_Channels(&adc3, adc3_value_b);
-
-    HAL_Delay(1);
-
+    ADC_FSM_Update();
   }
   /* USER CODE END 3 */
 }
@@ -287,6 +235,64 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/*
+ * @brief Inicializa la maquina de estados del manejo de los adc
+ */
+void ADC_FSM_Init() {
+  adc_fsm_state = INIT_ADCS; // La MEF inicializa para configurar los ADC
+  adc_being_adquired = 0; // Comienza con el ADC0
+}
+
+/*
+ * @brief Actualiza la maquina de estados del manejo de los adc
+ */
+void ADC_FSM_Update() {
+  switch (adc_fsm_state) {
+    case INIT_ADCS:
+      // Seteo los chip select en uno (por defecto el MX_GPIO_Init generado por el STMCUBE los setea en cero)
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4, GPIO_PIN_SET);
+      HAL_Delay(1); // Fuerzo un delay de 1ms para reiniciar la interfaz SPI de los ADCs. No implemento MEF para el retardo porque se ejecuta una sola vez al inicio y nunca más.
+
+      MCP3913_Load_Default_Config(&adc[0]); // Cargo valores por defecto en la estrucutra de configuracion del ADC 0
+      adc[0].spi_handle = (void *)&hspi2;   // SPI con el que va a trabajar
+      adc[0].spi_cs_port = (void *)GPIOA;   // Puerto del CS
+      adc[0].spi_cs_pin = GPIO_PIN_2;       // Pin del CS
+      adc[0].dev_address = MCP3913_DEFAULT_DEV_ADDRESS; // Address por defecto del ADC (especificada por el fabricante)
+      MCP3913_Init(&adc[0]); // Inicializo ADC 0
+
+      MCP3913_Load_Default_Config(&adc[1]); // Cargo valores por defecto en la estrucutra de configuracion del ADC 1
+      adc[1].spi_handle = (void *)&hspi2;   // SPI con el que va a trabajar
+      adc[1].spi_cs_port = (void *)GPIOA;   // Puerto del CS
+      adc[1].spi_cs_pin = GPIO_PIN_3;       // Pin del CS
+      adc[1].dev_address = MCP3913_DEFAULT_DEV_ADDRESS; // Address por defecto del ADC (especificada por el fabricante)
+      MCP3913_Init(&adc[1]); // Inicializo ADC 1
+
+      MCP3913_Load_Default_Config(&adc[2]); // Cargo valores por defecto en la estrucutra de configuracion del ADC 2
+      adc[2].spi_handle = (void *)&hspi2;   // SPI con el que va a trabajar
+      adc[2].spi_cs_port = (void *)GPIOA;   // Puerto del CS
+      adc[2].spi_cs_pin = GPIO_PIN_4;       // Pin del CS
+      adc[2].dev_address = MCP3913_DEFAULT_DEV_ADDRESS; // Address por defecto del ADC (especificada por el fabricante)
+      MCP3913_Init(&adc[2]); // Inicializo ADC 2
+
+      adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
+      break;
+    case ADQUIRE_SAMPLES_FROM_ONE_ADC:
+      MCP3913_Read_All_Channels(&adc[adc_being_adquired], adc_values[adc_being_adquired]);
+
+      adc_fsm_state = SWITCH_TO_NEXT_ADC;
+      break;
+    case SWITCH_TO_NEXT_ADC:
+      adc_being_adquired = (adc_being_adquired + 1) % MCP3913_ADC_QTY;
+
+      adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
+      break;
+    default:
+      // Si la MEF cae en esta condicion no esperada, reinicializo la MEF.
+      adc_fsm_state = INIT_ADCS;
+      break;
+    }
+}
 
 /* USER CODE END 4 */
 

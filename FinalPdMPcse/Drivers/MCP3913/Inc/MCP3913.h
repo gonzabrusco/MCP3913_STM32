@@ -6,6 +6,10 @@
 
 /* Driver para el ADC MCP3913*/
 
+// Cantidad de canales
+#define MCP3913_ADC_CHANNELS_QTY 6
+
+// Valores por defecto especificados por el fabricante
 #define MCP3913_DEFAULT_DEV_ADDRESS 0b01 //Address por default hardcodeado del MCP3913, al inicio de cada transmisión SPI se debe enviar el address del ADC.
 #define MCP3913_PASSWORD 0xA5 //Palabra clave que debe escribirse en el registro lock_crc (0x1F) del ADC para que ecuche los comandos de escritura.
 #define MCP3913_DEFAULT_VREF_CAL 0x50 //Valor de calibración para el desvío por temperatura que Microchip recomienda poner
@@ -381,7 +385,7 @@ typedef struct __MCP3913_handle_t {
 /* Carga las configuraciones por defecto a la estrucuta MCP3913_handle_t apuntada. No inicializa el ADC */
 void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle);
 /* Inicializa el ADC */
-void MCP3913_Init_ADC(const MCP3913_handle_t* adc_handle);
+void MCP3913_Init(const MCP3913_handle_t* adc_handle);
 /* Lee la medicion del canal solicitado. Si se desea leer más de un canal, es más eficiente usar MCP3913_Read_All_Channels */
 void MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel, int32_t * value);
 /* Lee la medicion de todos los canales en una sola operación. Esto es más rápido porque porque cuando consulta el registro STATUSCOM y los DRSTATUS bits estan en cero, automaticamente lee todos los canales en una sola operación. */
