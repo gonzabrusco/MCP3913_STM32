@@ -3,16 +3,17 @@
 
 /* Carga las configuraciones por defecto a la estrucuta MCP3913_handle_t apuntada. No inicializa el ADC */
 void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
+  if(!adc_handle) return;
+
   //Configuración del registro de lock
   adc_handle->lock_crc_reg.lock = MCP3913_PASSWORD;
-  adc_handle->lock_crc_reg.crc_reg = 0;
 
   //Configuración por default del registro Config 0
-  adc_handle->config0_reg.boost = BOOSTX1;
+  adc_handle->config0_reg.boost = BOOSTX2;
   adc_handle->config0_reg.dither = MAX;
   adc_handle->config0_reg.vref_cal = MCP3913_DEFAULT_VREF_CAL;
   adc_handle->config0_reg.osr = O256;
-  adc_handle->config0_reg.pre = O256;
+  adc_handle->config0_reg.pre = MCLK1;
   adc_handle->config0_reg.en_gaincal = false;
   adc_handle->config0_reg.en_offcal = false;
 
@@ -34,10 +35,10 @@ void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
 
   //Configuración por default del registro de status
   adc_handle->statuscom_reg.dr_high = false;
-  adc_handle->statuscom_reg.dr_link = false;
+  adc_handle->statuscom_reg.dr_link = true; // Setea todos los DRSTATUS bits al mismo tiempo. No cambiar esta configuracion.
   adc_handle->statuscom_reg.en_crc_com = false;
   adc_handle->statuscom_reg.en_int = false;
-  adc_handle->statuscom_reg.read_reg_incr = TYPE;
+  adc_handle->statuscom_reg.read_reg_incr = TYPE; // Loopea por todos los canales. No cambiar esta configuracion.
   adc_handle->statuscom_reg.width_crc = CRC_16_BITS;
   adc_handle->statuscom_reg.width_data = WIDTH_32_BITS_SE;
   adc_handle->statuscom_reg.write_reg_incr = false;
@@ -56,6 +57,11 @@ void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
   adc_handle->gain_reg.ch4 = GAINX1;
   adc_handle->gain_reg.ch5 = GAINX1;
 
+  //Configuración por default del registro de fase
+  adc_handle->phase0_reg.phasec = 0;
+  adc_handle->phase1_reg.phaseb = 0;
+  adc_handle->phase1_reg.phasea = 0;
+
   // Configuracion de los registros de calibracion. Todos en cero por default.
   adc_handle->offcal_ch0_reg.value = 0;
   adc_handle->gaincal_ch0_reg.value = 0;
@@ -73,6 +79,7 @@ void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
 
 /* Inicializa el ADC con las configuraciones pasadas */
 void MCP3913_Init(const MCP3913_handle_t* adc_handle) {
+  if(!adc_handle) return;
 
   // Desbloqueo los registros del ADC escribiendo el password en LOCK
   MCP3913_Port_Write_Reg(adc_handle, MCP3913_LOCK_CRC_REG_ADD, adc_handle->lock_crc_reg.byte);
@@ -98,17 +105,17 @@ void MCP3913_Init(const MCP3913_handle_t* adc_handle) {
 
   // Bloqueo los registros del ADC borrando el password en LOCK.
   // Creo una variable auxiliar para no modificar la estructura pasada por el usuario.
-  MCP3913_Lock_CRC_Reg_t lock_crc_reg = adc_handle->lock_crc_reg;
+  MCP3913_Lock_CRC_Reg_t lock_crc_reg;
   lock_crc_reg.lock = 0;
   MCP3913_Port_Write_Reg(adc_handle, MCP3913_LOCK_CRC_REG_ADD, lock_crc_reg.byte);
 }
 
-/* Lee la medicion del canal solicitado */
-int32_t MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel) {
+/* Lee la medicion del canal solicitado. Si se desea leer más de un canal, es más eficiente usar MCP3913_Read_All_Channels */
+void MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel, int32_t * value) {
+  if(!adc_handle || channel > 5 || !value) return;
+
   MCP3913_Channel_Reg_t channel_read;
   MCP3913_StatusCom_Reg_t statuscom_reg;
-
-  channel_read.value = 0;
 
   do {
     // Leo el estado del ADC
@@ -117,7 +124,26 @@ int32_t MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel
 
   MCP3913_Port_Read_4_Bytes_Reg(adc_handle, channel, channel_read.byte);
 
-  return channel_read.value;
+  *value = channel_read.value;
+}
+
+/* Lee la medicion de todos los canales en una sola operación. Esto es más rápido porque porque cuando consulta el registro STATUSCOM y los DRSTATUS bits estan en cero, automaticamente lee todos los canales en una sola operación. */
+void MCP3913_Read_All_Channels(const MCP3913_handle_t* adc_handle, int32_t * values) {
+  if(!adc_handle || !values) return;
+
+  uint8_t read_array[24]; // 6 canales x 4 bytes cada uno = 24.
+  MCP3913_StatusCom_Reg_t statuscom_reg;
+
+  do {
+    // Leo el estado del ADC
+    MCP3913_Port_Read_3_Bytes_Reg(adc_handle, MCP3913_STATUSCOM_REG_ADD, statuscom_reg.byte);
+  } while(statuscom_reg.channel_byte); //Se espera hasta que todos los bits de DRSTATUS sean cero.
+
+  MCP3913_Port_Read_24_Bytes_Reg(adc_handle, 0, read_array);
+
+  for(uint8_t i = 0; i < 6; i++) { // Recorro los 6 canales del ADC y junto cuatro uint8_t para formar un int32_t por canal.
+    values[5-i] = (int32_t)((uint32_t)read_array[i*4+3] << 24 | (uint32_t)read_array[i*4+2] << 16 | (uint32_t)read_array[i*4+1] << 8 | (uint32_t)read_array[i*4]);
+  }
 }
 
 

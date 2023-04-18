@@ -26,7 +26,7 @@ void MCP3913_Port_Write_Reg(const MCP3913_handle_t* adc_handle, uint8_t reg_addr
 
   HAL_SPI_Transmit((SPI_HandleTypeDef*)adc_handle->spi_handle, &control.byte, 1, HAL_MAX_DELAY);
   for(int i = 0; i < 3; i++) {
-    HAL_SPI_Transmit((SPI_HandleTypeDef*)adc_handle->spi_handle, &reg_value[2-i], 1, HAL_MAX_DELAY);
+    HAL_SPI_Transmit((SPI_HandleTypeDef*)adc_handle->spi_handle, (uint8_t*)&reg_value[2-i], 1, HAL_MAX_DELAY);
   }
 
   MCP3913_Port_CS_High(adc_handle);
@@ -56,7 +56,12 @@ void MCP3913_Port_Read_3_Bytes_Reg(const MCP3913_handle_t* adc_handle, uint8_t r
   MCP3913_Port_Read_N_Bytes_Reg(adc_handle, reg_address, reg_value, 3);
 }
 
-/*Lee un registro de 4 bytes. (Utilizado cuando se setea el adc en la expansión de signo del ADC).*/
+/*Lee un registro de 4 bytes. (Utilizado cuando se setea el adc en la expansión de signo del ADC y se lee un solo canal).*/
 void MCP3913_Port_Read_4_Bytes_Reg(const MCP3913_handle_t* adc_handle, uint8_t reg_address, uint8_t* reg_value) {
   MCP3913_Port_Read_N_Bytes_Reg(adc_handle, reg_address, reg_value, 4);
+}
+
+/*Lee un registro de 24 bytes. (Utilizado cuando se setea el adc en la expansión de signo del ADC y se leen los 6 canales).*/
+void MCP3913_Port_Read_24_Bytes_Reg(const MCP3913_handle_t* adc_handle, uint8_t reg_address, uint8_t* reg_value) {
+  MCP3913_Port_Read_N_Bytes_Reg(adc_handle, reg_address, reg_value, 24);
 }

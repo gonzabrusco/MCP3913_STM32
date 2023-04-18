@@ -91,17 +91,47 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   MCP3913_handle_t adc1;
-  int32_t adc_value[6];
+  MCP3913_handle_t adc2;
+  MCP3913_handle_t adc3;
+  int32_t adc1_value[6];
+  int32_t adc2_value[6];
+  int32_t adc3_value[6];
+  int32_t adc1_value_b[6];
+  int32_t adc2_value_b[6];
+  int32_t adc3_value_b[6];
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4, GPIO_PIN_SET);
+  HAL_Delay(10);
 
   MCP3913_Load_Default_Config(&adc1);
   adc1.spi_handle = (void *)&hspi2;
   adc1.spi_cs_port = (void *)GPIOA;
-  adc1.spi_cs_pin = GPIO_PIN_4;
+  adc1.spi_cs_pin = GPIO_PIN_2;
   adc1.dev_address = MCP3913_DEFAULT_DEV_ADDRESS;
 
-  MCP3913_Init(&adc1);
+  MCP3913_Load_Default_Config(&adc2);
+  adc2.spi_handle = (void *)&hspi2;
+  adc2.spi_cs_port = (void *)GPIOA;
+  adc2.spi_cs_pin = GPIO_PIN_3;
+  adc2.dev_address = MCP3913_DEFAULT_DEV_ADDRESS;
+
+  MCP3913_Load_Default_Config(&adc3);
+  adc3.spi_handle = (void *)&hspi2;
+  adc3.spi_cs_port = (void *)GPIOA;
+  adc3.spi_cs_pin = GPIO_PIN_4;
+  adc3.dev_address = MCP3913_DEFAULT_DEV_ADDRESS;
+
+  adc2.spi_cs_pin = GPIO_PIN_2;
+  MCP3913_Init(&adc2);
+  adc2.spi_cs_pin = GPIO_PIN_3;
+  MCP3913_Init(&adc2);
+  adc2.spi_cs_pin = GPIO_PIN_4;
+  MCP3913_Init(&adc2);
+  adc2.spi_cs_pin = GPIO_PIN_3;
+
+
+  //MCP3913_Init(&adc2);
+  //MCP3913_Init(&adc3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,12 +141,45 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    adc_value[0] = MCP3913_Read_Channel(&adc1, 0);
-    adc_value[1] = MCP3913_Read_Channel(&adc1, 1);
-    adc_value[2] = MCP3913_Read_Channel(&adc1, 2);
-    adc_value[3] = MCP3913_Read_Channel(&adc1, 3);
-    adc_value[4] = MCP3913_Read_Channel(&adc1, 4);
-    adc_value[5] = MCP3913_Read_Channel(&adc1, 5);
+/*
+    MCP3913_Read_Channel(&adc1, 0, &adc1_value[0]);
+    MCP3913_Read_Channel(&adc1, 1, &adc1_value[1]);
+    MCP3913_Read_Channel(&adc1, 2, &adc1_value[2]);
+    MCP3913_Read_Channel(&adc1, 3, &adc1_value[3]);
+    MCP3913_Read_Channel(&adc1, 4, &adc1_value[4]);
+    MCP3913_Read_Channel(&adc1, 5, &adc1_value[5]);
+
+    HAL_Delay(1);
+
+    MCP3913_Read_Channel(&adc2, 0, &adc2_value[0]);
+    MCP3913_Read_Channel(&adc2, 1, &adc2_value[1]);
+    MCP3913_Read_Channel(&adc2, 2, &adc2_value[2]);
+    MCP3913_Read_Channel(&adc2, 3, &adc2_value[3]);
+    MCP3913_Read_Channel(&adc2, 4, &adc2_value[4]);
+    MCP3913_Read_Channel(&adc2, 5, &adc2_value[5]);
+
+    HAL_Delay(1);
+
+    MCP3913_Read_Channel(&adc3, 0, &adc3_value[0]);
+    MCP3913_Read_Channel(&adc3, 1, &adc3_value[1]);
+    MCP3913_Read_Channel(&adc3, 2, &adc3_value[2]);
+    MCP3913_Read_Channel(&adc3, 3, &adc3_value[3]);
+    MCP3913_Read_Channel(&adc3, 4, &adc3_value[4]);
+    MCP3913_Read_Channel(&adc3, 5, &adc3_value[5]);
+*/
+    HAL_Delay(1);
+
+    MCP3913_Read_All_Channels(&adc1, adc1_value_b);
+
+    HAL_Delay(1);
+
+    MCP3913_Read_All_Channels(&adc2, adc2_value_b);
+
+    HAL_Delay(1);
+
+    MCP3913_Read_All_Channels(&adc3, adc3_value_b);
+
+    HAL_Delay(1);
 
   }
   /* USER CODE END 3 */
@@ -185,7 +248,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -228,7 +291,6 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
-  // Pongo en nivel alto los pines de CS SPI
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
