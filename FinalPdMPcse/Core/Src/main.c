@@ -121,17 +121,9 @@ int main(void)
   adc3.spi_cs_pin = GPIO_PIN_4;
   adc3.dev_address = MCP3913_DEFAULT_DEV_ADDRESS;
 
-  adc2.spi_cs_pin = GPIO_PIN_2;
+  MCP3913_Init(&adc1);
   MCP3913_Init(&adc2);
-  adc2.spi_cs_pin = GPIO_PIN_3;
-  MCP3913_Init(&adc2);
-  adc2.spi_cs_pin = GPIO_PIN_4;
-  MCP3913_Init(&adc2);
-  adc2.spi_cs_pin = GPIO_PIN_3;
-
-
-  //MCP3913_Init(&adc2);
-  //MCP3913_Init(&adc3);
+  MCP3913_Init(&adc3);
   /* USER CODE END 2 */
 
   /* Infinite loop */

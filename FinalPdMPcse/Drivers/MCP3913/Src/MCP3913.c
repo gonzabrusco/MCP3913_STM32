@@ -34,6 +34,7 @@ void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
   adc_handle->config1_reg.vref_ext = false;
 
   //Configuración por default del registro de status
+  adc_handle->statuscom_reg.reserved = 0;
   adc_handle->statuscom_reg.dr_high = false;
   adc_handle->statuscom_reg.dr_link = true; // Setea todos los DRSTATUS bits al mismo tiempo. No cambiar esta configuracion.
   adc_handle->statuscom_reg.en_crc_com = false;
@@ -57,8 +58,9 @@ void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
   adc_handle->gain_reg.ch4 = GAINX1;
   adc_handle->gain_reg.ch5 = GAINX1;
 
-  //Configuración por default del registro de fase
+  //Configuración por default del registro de fase C
   adc_handle->phase0_reg.phasec = 0;
+  //Configuración por default del registro de fase A y B
   adc_handle->phase1_reg.phaseb = 0;
   adc_handle->phase1_reg.phasea = 0;
 

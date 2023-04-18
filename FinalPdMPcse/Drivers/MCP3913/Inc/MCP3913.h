@@ -198,7 +198,8 @@ typedef union{
     bool ch3_not_ready :1;
     bool ch4_not_ready :1;
     bool ch5_not_ready :1;
-    uint8_t :8;
+    uint8_t :6;
+    uint8_t reserved :2; // Estos dos bits deben ser SIEMPRE cero. Sino no funciona el ADC
     bool en_int :1;
     bool en_crc_com :1;
     MCP3913_Width_Data_t width_data :2;
@@ -223,11 +224,7 @@ en_offcal = Habilita la calibración de offset en todos los canales.
 typedef union{
   struct __attribute__ ((packed)) {
     uint8_t vref_cal :8;
-    bool: 1;
-    bool: 1;
-    bool: 1;
-    bool: 1;
-    bool: 1;
+    uint8_t :5;
     MCP3913_Oversampling_t osr :3;
     MCP3913_Prescale_t pre :2;
     MCP3913_Boost_t boost :2;
@@ -384,7 +381,7 @@ typedef struct __MCP3913_handle_t {
 /* Carga las configuraciones por defecto a la estrucuta MCP3913_handle_t apuntada. No inicializa el ADC */
 void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle);
 /* Inicializa el ADC */
-void MCP3913_Init(const MCP3913_handle_t* adc_handle);
+void MCP3913_Init_ADC(const MCP3913_handle_t* adc_handle);
 /* Lee la medicion del canal solicitado. Si se desea leer más de un canal, es más eficiente usar MCP3913_Read_All_Channels */
 void MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel, int32_t * value);
 /* Lee la medicion de todos los canales en una sola operación. Esto es más rápido porque porque cuando consulta el registro STATUSCOM y los DRSTATUS bits estan en cero, automaticamente lee todos los canales en una sola operación. */
