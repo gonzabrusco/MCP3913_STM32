@@ -109,7 +109,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-  ADC_FSM_Init();
+  ADC_FSM_Init(); // Inicializo maquina de estados de ADC
 
   /* USER CODE END 2 */
 
@@ -120,7 +120,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    ADC_FSM_Update();
+    ADC_FSM_Update(); // Actualizo la maquina de estados de adquisicion
   }
   /* USER CODE END 3 */
 }
@@ -278,12 +278,12 @@ void ADC_FSM_Update() {
       adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
       break;
     case ADQUIRE_SAMPLES_FROM_ONE_ADC:
-      MCP3913_Read_All_Channels(&adc[adc_being_adquired], adc_values[adc_being_adquired]);
+      MCP3913_Read_All_Channels(&adc[adc_being_adquired], adc_values[adc_being_adquired]); // Leo todos los canales de un ADC
 
       adc_fsm_state = SWITCH_TO_NEXT_ADC;
       break;
     case SWITCH_TO_NEXT_ADC:
-      adc_being_adquired = (adc_being_adquired + 1) % MCP3913_ADC_QTY;
+      adc_being_adquired = (adc_being_adquired + 1) % MCP3913_ADC_QTY; // Cambio al siguiente ADC
 
       adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
       break;

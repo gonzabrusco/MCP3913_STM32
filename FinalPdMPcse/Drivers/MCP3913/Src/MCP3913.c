@@ -1,7 +1,10 @@
 #include "MCP3913.h"
 #include "MCP3913_port.h"
 
-/* Carga las configuraciones por defecto a la estrucuta MCP3913_handle_t apuntada. No inicializa el ADC */
+/*
+ * @brief Carga las configuraciones por defecto a la estrucuta MCP3913_handle_t apuntada. No inicializa el ADC
+ * @param adc_handle Puntero al handle del ADC
+ */
 void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
   if(!adc_handle) return;
 
@@ -79,7 +82,10 @@ void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
   adc_handle->gaincal_ch5_reg.value = 0;
 }
 
-/* Inicializa el ADC con las configuraciones pasadas */
+/*
+ * @brief Inicializa el ADC
+ * @param adc_handle Puntero al handle del ADC
+ */
 void MCP3913_Init(const MCP3913_handle_t* adc_handle) {
   if(!adc_handle) return;
 
@@ -112,7 +118,12 @@ void MCP3913_Init(const MCP3913_handle_t* adc_handle) {
   MCP3913_Port_Write_Reg(adc_handle, MCP3913_LOCK_CRC_REG_ADD, lock_crc_reg.byte);
 }
 
-/* Lee la medicion del canal solicitado. Si se desea leer más de un canal, es más eficiente usar MCP3913_Read_All_Channels */
+/*
+ * @brief Lee la medicion del canal solicitado. Si se desea leer más de un canal, se recomienda usar MCP3913_Read_All_Channels
+ * @param adc_handle Puntero al handle del ADC
+ * @param channel Canal a medir (de 0 a 5)
+ * @param value Puntero al entero donde se guardara la medicion
+ */
 void MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel, int32_t * value) {
   if(!adc_handle || channel > 5 || !value) return;
 
@@ -129,7 +140,11 @@ void MCP3913_Read_Channel(const MCP3913_handle_t* adc_handle, uint8_t channel, i
   *value = channel_read.value;
 }
 
-/* Lee la medicion de todos los canales en una sola operación. Esto es más rápido porque porque cuando consulta el registro STATUSCOM y los DRSTATUS bits estan en cero, automaticamente lee todos los canales en una sola operación. */
+/*
+ * @brief Lee la medicion de todos los canales en una sola operación. Esto es más rápido porque porque cuando consulta el registro STATUSCOM y los DRSTATUS bits estan en cero, automaticamente lee todos los canales en una sola operación.
+ * @param adc_handle Puntero al handle del ADC
+ * @param values Puntero al array donde se guardaran las mediciones (debe tener un largo de al menos 6 enteros).
+ */
 void MCP3913_Read_All_Channels(const MCP3913_handle_t* adc_handle, int32_t * values) {
   if(!adc_handle || !values) return;
 
