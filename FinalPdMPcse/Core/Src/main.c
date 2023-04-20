@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "MCP3913.h"
+#include "DELAY.h"
 
 /* USER CODE END Includes */
 
@@ -32,6 +33,7 @@ typedef enum{
   INIT_ADCS,
   ADQUIRE_SAMPLES_FROM_ONE_ADC,
   SWITCH_TO_NEXT_ADC,
+  WAIT_FOR_RESTART,
 } adc_fsm_state_t;
 
 /* USER CODE END PTD */
@@ -39,6 +41,7 @@ typedef enum{
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define MCP3913_ADC_QTY 3
+#define ADC_FSM_RESTART_DELAY 1000
 
 /* USER CODE END PD */
 
@@ -55,6 +58,7 @@ static MCP3913_handle_t adc[MCP3913_ADC_QTY]; // Array de estructuras de configu
 static int32_t adc_values[MCP3913_ADC_QTY][MCP3913_ADC_CHANNELS_QTY]; // Matriz donde se guardaron los valores leidos.
 static adc_fsm_state_t adc_fsm_state; // Variable que indica el estado de la MEF de adquisicion de ADCs
 static uint8_t adc_being_adquired; // Variable que indica que ADC esta siendo adquirido
+static delay_t adc_delay; // Variable para manejar el delay de la MEF de ADC
 
 /* USER CODE END PV */
 
@@ -242,6 +246,7 @@ static void MX_GPIO_Init(void)
 void ADC_FSM_Init() {
   adc_fsm_state = INIT_ADCS; // La MEF inicializa para configurar los ADC
   adc_being_adquired = 0; // Comienza con el ADC0
+  DELAY_Init(&adc_delay, ADC_FSM_RESTART_DELAY); // Inicializo el delay
 }
 
 /*
@@ -278,14 +283,27 @@ void ADC_FSM_Update() {
       adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
       break;
     case ADQUIRE_SAMPLES_FROM_ONE_ADC:
+      // Leo todos los canales de un solo ADC
       MCP3913_Read_All_Channels(&adc[adc_being_adquired], adc_values[adc_being_adquired]); // Leo todos los canales de un ADC
 
       adc_fsm_state = SWITCH_TO_NEXT_ADC;
       break;
     case SWITCH_TO_NEXT_ADC:
+      // Cambio de ADC
       adc_being_adquired = (adc_being_adquired + 1) % MCP3913_ADC_QTY; // Cambio al siguiente ADC
 
-      adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
+      if(adc_being_adquired == 0) {
+        adc_fsm_state = WAIT_FOR_RESTART;
+      }
+      else {
+        adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
+      }
+      break;
+    case WAIT_FOR_RESTART:
+      // Espero (no bloqueante) antes de reiniciar la consulta de los ADC.
+      if(DELAY_Read(&adc_delay)) {
+        adc_fsm_state = ADQUIRE_SAMPLES_FROM_ONE_ADC;
+      }
       break;
     default:
       // Si la MEF cae en esta condicion no esperada, reinicializo la MEF.

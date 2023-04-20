@@ -43,7 +43,7 @@ void MCP3913_Load_Default_Config(MCP3913_handle_t* adc_handle) {
   adc_handle->statuscom_reg.en_crc_com = false;
   adc_handle->statuscom_reg.en_int = false;
   adc_handle->statuscom_reg.read_reg_incr = TYPE; // Loopea por todos los canales. No cambiar esta configuracion.
-  adc_handle->statuscom_reg.width_crc = CRC_16_BITS;
+  adc_handle->statuscom_reg.width_crc = CRC_32_BITS;
   adc_handle->statuscom_reg.width_data = WIDTH_32_BITS_SE;
   adc_handle->statuscom_reg.write_reg_incr = false;
   adc_handle->statuscom_reg.ch0_not_ready = true;
