@@ -1,5 +1,5 @@
-#ifndef __MCP3913_PORT_H__
-#define __MCP3913_PORT_H__
+#ifndef __MCP3913_HAL_PORT_H__
+#define __MCP3913_HAL_PORT_H__
 
 #include <stdint.h>
 #include "MCP3913.h"

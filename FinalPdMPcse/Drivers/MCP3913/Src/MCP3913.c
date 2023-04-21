@@ -1,5 +1,6 @@
 #include "MCP3913.h"
-#include "MCP3913_port.h"
+#include "MCP3913_LL_port.h"
+//#include "MCP3913_HALL_port.h"
 
 /*
  * @brief Carga las configuraciones por defecto a la estrucuta MCP3913_handle_t apuntada. No inicializa el ADC

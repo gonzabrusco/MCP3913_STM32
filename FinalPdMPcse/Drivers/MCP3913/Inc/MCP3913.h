@@ -359,7 +359,7 @@ typedef union {
 typedef struct __MCP3913_handle_t {
     void * spi_handle;
     void * spi_cs_port;
-    uint16_t spi_cs_pin;
+    uint32_t spi_cs_pin;
     uint8_t dev_address;
     MCP3913_Phase0_Reg_t phase0_reg;
     MCP3913_Phase1_Reg_t phase1_reg;
